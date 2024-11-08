@@ -1,4 +1,4 @@
-# OpenMM AMBER14 on GPU 
+# OpenMM AMBER14 on GPU 🧬🏎️
 
 This repo allows you to run the AMBER14 forcefield on a pre-run MD simulation via OpenMM without having to run _more_ MD. It extracts vector information from the trajectory, stores them in an OpenMM-friendly data format, and the OpenMM simulator parses these coordinates to give frame-wise energies and forces. 
 
