@@ -3,11 +3,6 @@ import numpy as np
 from openmm import unit, app, Platform
 from openmm.app import PDBFile
 
-# from openfold.np.relax.amber_minimize import _add_restraints
-# from openfold.np.relax.cleanup import fix_pdb as _fix_pdb
-# from src.utils.protein.faspr import faspr_pack
-# from src.utils.misc.process import mp_imap_unordered
-
 CPU_COUNT = os.cpu_count()
 KJ_PER_MOL = unit.kilojoules_per_mole
 KCAL_PER_MOL = unit.kilocalories_per_mole
@@ -18,13 +13,16 @@ KCAL_PER_MOL_NM = unit.kilocalories_per_mole / (unit.nano * unit.meter)
 STIFFNESS_UNIT = KCAL_PER_MOL / (ANG ** 2)
 
 def get_forces_for_frame(pdb_path, add_H=False):
+    """
+    pdb_path: path to PDB file containing a single *all-atom* conformation
+    add_H: whether to add explicit hydrogen atoms, not consequential
+    """
+    
     def get_energy_profile(system, simulation, ret={}):
-        # Get all forces
-        state = simulation.context.getState(getEnergy=True, getForces=True)
+        state = simulation.context.getState(getEnergy=True, getForces=True) # Get all forces
         ret['potential_energy'] = state.getPotentialEnergy() / KCAL_PER_MOL
 
-        # Get energy profile
-        for i, f in enumerate(system.getForces()):
+        for i, f in enumerate(system.getForces()): # Get energy profile
             state = simulation.context.getState(getEnergy=True, groups={i})
             ret[f.getName()] = state.getPotentialEnergy() / KCAL_PER_MOL
 
@@ -37,7 +35,7 @@ def get_forces_for_frame(pdb_path, add_H=False):
         atom_forces = simulation.context.getState(getForces=True).getForces() / KCAL_PER_MOL_NM
         atom_forces = np.array(atom_forces)
 
-        ca_forces = []
+        ca_forces = [] # carbon-alpha-only forces
         atom_idx = 0
         for j, res in enumerate(topology._chains[0].residues()):
             for atom in res.atoms():
@@ -45,6 +43,7 @@ def get_forces_for_frame(pdb_path, add_H=False):
                     ca_forces.append(atom_forces[atom_idx])
                 atom_idx += 1
         return atom_forces, ca_forces
+    
     platform = openmm.Platform.getPlatformByName('CUDA') # set to GPU mode
     
     forcefield = app.ForceField('amber14/protein.ff14SB.xml', 'amber14/tip3pfb.xml')
